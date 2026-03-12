@@ -1,0 +1,275 @@
+create database superstore;
+use superstore;
+show tables;
+select * from superstore;
+LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/superstore.csv'
+INTO TABLE superstore
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+
+CREATE TABLE superstore (
+	row_id int primary key auto_increment,
+    order_id VARCHAR(50),
+    order_date VARCHAR(20),
+    ship_date VARCHAR(20),
+    ship_mode VARCHAR(50),
+    customer_name VARCHAR(100),
+    segment VARCHAR(50),
+    country VARCHAR(100),
+    state VARCHAR(100),
+    market VARCHAR(50),
+    region VARCHAR(50),
+    product_id VARCHAR(50),
+    category VARCHAR(50),
+    sub_category VARCHAR(50),
+    product_name VARCHAR(255),
+    sales VARCHAR(20),
+    quantity VARCHAR(10),
+    discount VARCHAR(10),
+    profit VARCHAR(20),
+    shipping_cost VARCHAR(20),
+    order_priority VARCHAR(50),
+    year VARCHAR(10)
+);
+select * from superstore;
+describe superstore;
+select min(sales),
+max(sales),
+ sum(case when sales like '%,%' then 1 else 0 end) as has_comma
+ from superstore;
+ SELECT sales FROM superstore 
+ORDER BY sales DESC 
+LIMIT 10;
+describe superstore;
+
+update superstore set
+order_date=str_to_date(order_date,'%d/%m/%Y'),
+ship_date=str_to_date(ship_date,'%d/%m/%Y');
+
+alter table superstore
+modify order_date date,
+modify ship_date date;
+
+alter table superstore
+modify year year ;
+
+alter table superstore 
+modify quantity int;
+
+update superstore set 
+sales=replace(sales,',', '');
+
+select sum(case when sales like '%,%' then 1 else 0 end)  from superstore;
+
+alter table superstore 
+modify sales decimal(10,4);
+
+select 
+sum(case when discount like '%.%' then 1 else 0 end) from superstore;
+alter table superstore
+modify column discount decimal(10,4);
+describe superstore;
+
+select 
+sum(case when profit like '%.%' then 1 else 0 end) from superstore;
+
+alter table superstore
+modify column profit decimal(10,4);
+
+
+
+
+select
+sum(case when shipping_cost like '%.%' then 1 else 0 end) from superstore;
+
+alter table superstore
+modify column shipping_cost decimal(10,4);
+
+select count(*) from superstore;
+-- so total rows before cleaning is 51290 
+select * from superstore;
+
+select 
+min(order_date),
+max(order_date)
+from superstore;
+
+-- order is placed in data range 2011-01-01 to 2014-12-31
+
+select rn, order_id, customer_name,country,state,market,region,product_id from(
+select customer_name,country,state,market,region,product_id , order_id,
+row_number() over( partition by order_id,customer_name,country,state,market,region,product_id order by order_id) rn
+from superstore) as rn
+where rn>1;
+
+delete from superstore 
+where row_id in (
+
+select  row_id from(
+select row_id,
+row_number() over( partition by order_id,customer_name,country,state,market,region,product_id order by order_id) rn
+from superstore) as rn
+where rn>1);
+
+select count(*) from superstore;
+-- after removing dups 51225 rows in table
+
+describe superstore;
+
+select
+max(shipping_cost),
+min(shipping_cost),
+min(profit),
+max(profit),
+min(sales),
+max(sales)
+from superstore;
+-- max shipping cost=933.5700
+-- min shipping cost = 0
+-- max profit= 8399.9760
+-- min profit = -6599.9780
+-- min sales=0 
+-- max sales=22638.000
+
+-- something is causing loss (i.e negative profit) 
+-- shipping cost is cost used to ship product
+-- sales is revenue got from selling items (for example: a product is sold total quantity 20
+-- so its price per piece is $5 , revenue= 20*5=$100 is revenue (i.e) sales for that product )
+
+
+
+select * from superstore;
+
+-- which market generates the most sales and profit?
+select market,
+sum(profit) as totalprofit,
+sum(sales) as totalsales, 
+rank() over(order by sum(sales) desc) as sales_rank,
+rank() over(order by sum(profit) desc ) as profit_rank
+from superstore
+group by market
+order by totalsales desc;
+
+-- APAC market has the highest both total profit and total sales among all
+-- total margin APAC  HAS BROUGHT  12.17% 
+
+-- checking for all margins for all market has brought
+select market,
+sum(sales) as totalsales,
+sum(profit) as totalprofit,
+sum(profit)/sum(sales)*100 as margin,
+rank() over(order by sum(sales) desc) as sales_rank,
+rank() over(order by sum(profit) desc) as profit_rank,
+rank() over(order by sum(profit)/sum(sales)*100 desc ) as margin_rank
+from superstore
+group by market
+order by margin_rank desc;
+
+-- from this finding
+-- here canada has brought highest margin among all of them i.e 26.62 cents every dollar earned
+-- as APAC has highest sales and profit but it has margin rank at 4th postion 
+-- with only 12.18 cents every dollar earned 
+-- the concern here is EMEA has lowest rank and margin i.e only 5.44 cents among all decent sales 
+-- need some investivation at -- EMEA market
+
+select * from superstore;
+-- Why does EMEA have the lowest profit margin? 
+ -- Is it high discounts,high shipping costs, or both?
+select market, avg(discount)*100 as total_discount , avg(shipping_cost) as total_shipping_cost,
+rank() over (order by avg(discount)*100 desc) discount_rank,
+rank() over(order by  avg(shipping_cost) desc) shippingcost_rank 
+from superstore
+group by market;
+-- here EMEA therefore has given heavy discounts it clearly lies on rank 1st among 7 th of the market 
+-- highest shipping cost given is of market APAC 
+-- EMEA has given highest discount which is killing profit margin 
+-- i consider recommending them to lower their discounts 
+-- shipping cost for EMEA is not an issue 
+
+
+-- Which product category generates the most sales 
+-- and profit? 
+-- Does heavy discounting affect any category's margin?
+
+select * from superstore;
+
+select category , sum(sales) , sum(profit),
+rank() over(order by sum(sales) desc) as sales_rank,
+rank() over(order by sum(profit) desc) as profit_rank
+from superstore
+group by category 
+order by sales_rank ; 
+-- here we see that technology category has highest sales and profit
+-- furniture has second highest sales but has last profit ,maybe discount id causing furniture
+-- to have lowest profit in category
+
+
+-- checking discount affecting margin
+select category, avg(discount)*100 ,sum(profit)/sum(sales) *100,
+rank() over(order by avg(discount)*100 desc) as discount_rank,
+rank() over(order by sum(profit)/sum(sales)*100 desc) as margin_rank
+from superstore
+group by category
+order by category;
+-- furniture category has highest discount causing lowest margin
+-- recomendation reduce furniture discount to improve margin
+
+-- What is the maximum days to ship ?
+select datediff(ship_date, order_date) as daystoship,
+count(*) as order_count
+from superstore
+group by daystoship
+order by daystoship desc;
+-- it took maximum of 7 days to ship 3055 product
+-- most order took 4 days to be shipped
+-- 2598 products were shipped on same day
+
+
+select * from superstore;
+-- which customer segment is most profitable
+select segment,sum(profit) ,
+rank() over(order by sum(profit) desc) profit_rank,
+round(sum(profit)/sum(sales)*100, 2) AS margin,
+count(segment)
+from superstore
+group by segment;
+-- consumer segment is most profitable then 2nd is corporate then
+-- lastly homeoffice 
+-- as consumer has more profit and hme office has less but home office provides most margin
+-- margin of consumer(11.50) , margin of corporate(11.58) , margin of home office(11.98)
+-- so my recommendation is grow home office as it provides more margin 
+
+select * from superstore;
+-- which region has highest sales?
+ select  region ,sum(sales) ,sum(profit), sum(profit)/sum(sales)*100,
+ rank() over (order by sum(sales) desc) as sales_rank,
+ rank() over(order by sum(profit)desc) as profit_rank,
+ rank() over(order by sum(profit)/sum(sales) * 100 desc) as margin_rank
+ from superstore
+ group by region
+ order by sales_rank ;
+ -- central has highest sales and profit_rank but lies 9th at profit margin
+ -- Canada has lowest sales volume but highest profit margin
+ -- need some investigation for carbbean,Southeast Asia,EMEA
+ 
+ select region,
+ round(avg(discount)*100,2) as avg_discount,
+ round(avg(discount)*100,2) as avg_shipping,
+ round(sum(profit)/ sum(sales)*100,2) as margin
+ from superstore
+ where region in ('Caribbean', 'Southeast Asia', 'EMEA')
+ group by region 
+ order by margin;
+ -- very high discount is given in Southeast Asia with 27.22% with only 2% margin 
+ -- EMEA has 19.62% discount with 5.44%margin
+ -- Caribbean has 13.58% discount with 10.66% margin
+ -- Southeast Asia,EMEA,Caribbean should really lower their discounts
+ 
+ -- discount are is the single best driver of low profit margins
+ -- across markets, region and category
+ 
+
+ 
