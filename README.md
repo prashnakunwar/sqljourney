@@ -68,3 +68,40 @@ per basket than male customers!
 
 
 
+
+------------------------------------------------------------------------------------------------------
+
+## Project 2: Global Superstore Analysis
+Dataset: Global Superstore (51,225 transactions, 2011-2014)
+
+### Data Cleaning
+- Loaded CSV with VARCHAR then converted to proper types
+- Fixed date format from MM/DD/YYYY to DATE
+- Removed 65 duplicate rows using ROW_NUMBER()
+
+### Key Business Questions & Findings
+
+| # | Question | Finding |
+|---|---|---|
+| 1 | Best market? | APAC leads ($3.5M sales) |
+| 2 | Most efficient market? | Canada (26.62% margin) |
+| 3 | Why EMEA underperforms? | Highest discount rate |
+| 4 | Best category? | Technology leads |
+| 5 | Shipping analysis | Max 7 days, avg 4 days |
+| 6 | Best segment? | Consumer volume, Home Office efficiency |
+| 7 | Regional performance? | Central leads, Southeast Asia concerning |
+| 8 | Discount impact? | High discounts = -42% margin |
+| 9 | YoY growth? | 19-27% consistent growth |
+| 10 | Top products? | Technology dominates top 10 |
+
+### Key Theme
+> Discount rate is the #1 enemy of profitability
+> across all markets, regions and categories.
+
+### Skills Used
+- Advanced Window Functions (LAG, RANK, ROW_NUMBER)
+- CTEs (multiple chained)
+- CASE WHEN pivoting
+- Date functions (DATEDIFF, STR_TO_DATE)
+- Business metric calculations (margin, growth %)
+
