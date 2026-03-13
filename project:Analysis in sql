@@ -1,3 +1,4 @@
+
 create database superstore;
 use superstore;
 show tables;
@@ -272,4 +273,84 @@ select * from superstore;
  -- across markets, region and category
  
 
- 
+ select label,
+count(*) as total_orders,
+round(avg(discount)*100,2) as avg_discount,
+round(avg(profit),2) as avg_profit,
+round(sum(profit)/sum(sales)*100,2) as margin
+from(
+select *,
+case
+when discount=0 then 'no discount'
+when discount<=0.10 then 'low discount'
+when discount<=0.20 then 'medium discount'
+else 'high discount'
+end as label 
+from superstore) t 
+group  by label
+order  by avg_discount;
+-- discount is directly destroying profit
+-- no discount-> 25.32% margin with avg profit oof $61.01
+-- low discount -> 17.31% margin with avg profit of $73
+-- medium discount -> 9.86% margin with avg profit of $28
+-- high discount -> 42.22% with avg loss of $71.93 
+-- elimate all discount above 20%
+-- 11325 orders are currently losing money due to discount
+
+
+-- year over growth
+desc superstore;
+
+with yearly as( 
+select year, sum(sales) as total_sales
+from superstore
+group by year
+),
+
+lagged as(
+select year, 
+total_sales,
+lag(total_sales) over(order by year) as prev_year_sales
+from yearly 
+)
+
+select
+year ,
+total_sales,
+prev_year_sales,
+round((total_sales-prev_year_sales)/prev_year_sales*100 )as growth
+from lagged;
+-- 2011 to 2012 19% growth from prev year
+-- 2012 to 2013 27% growth from prev year
+-- 2013 to 2014 265% growth from prev year
+
+-- which market is causing  acceleration on 2013?
+select year ,
+market,
+round(sum(sales),2 ) as total_sales
+from superstore
+where year in (2012,2013)
+group by year,market
+order by year , total_sales desc;
+
+-- africa has highest sales causing acceleration in 2013
+select * from superstore;
+-- top 10 most profitable products
+select  product_name, sum(profit),
+rank() over(order by sum(profit) desc) as profit_rank
+from superstore
+group  by product_name limit 10;
+-- Canon imageCLASS 2200 Advanced Copier with profit rank 1
+-- Cisco Smart Phone, Full Size with profit rank 2
+-- Motorola Smart Phone, Full Size with profit rank 3
+-- Hoover Stove, Red with profit rank 4
+-- Sauder Classic Bookcase, Traditional with profit rank 5
+-- Harbour Creations Executive Leather Armchair, Adjustable with profit rank 6
+-- Nokia Smart Phone, Full Size with profit rank 7
+-- Cisco Smart Phone, with Caller ID with profit rank 8
+-- Nokia Smart Phone, with Caller ID with profit rank 9
+-- Belkin Router, USB with profit rank 10
+
+
+-- conclusion: Discount rate is the single biggest threat to profitability across 
+-- all markets, regions, categories in this global retail business
