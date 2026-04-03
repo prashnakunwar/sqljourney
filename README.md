@@ -105,3 +105,175 @@ Dataset: Global Superstore (51,225 transactions, 2011-2014)
 - Date functions (DATEDIFF, STR_TO_DATE)
 - Business metric calculations (margin, growth %)
 
+
+------------------------------------------------------------------------------------------
+### Project 3
+# Bank Database 
+A comprehensive SQL-based data analysis project on a simulated banking database containing **50,000+ customers**, **1,000,000 transactions**, **30,000 loans**, and more. This project covers data cleaning, schema validation, exploratory data analysis (EDA), and business intelligence insights using MySQL.
+ 
+---
+ 
+##  Database Schema
+ 
+The `bank` database consists of **7 core tables**:
+ 
+| Table | Description |
+|---|---|
+| `customers` | Customer profiles including credit scores and city |
+| `accounts` | Bank accounts (Savings, Checking, Business) |
+| `transactions` | Financial transactions linked to accounts and merchants |
+| `loans` | Loan records with amounts and interest rates |
+| `cards` | Debit and credit cards linked to accounts |
+| `merchants` | Merchant information for transaction tracking |
+| `branches` | Bank branch details across the USA |
+
+ 
+##  Phase 1: Data Cleaning & Schema Enforcement
+ 
+Before analysis, the dataset was cleaned and constraints were applied:
+ 
+- **NOT NULL constraints** enforced on critical columns (names, emails, dates, amounts)
+- **ENUM types** applied to `card_type` (`credit`, `debit`) and `account_type` (`Savings`, `Business`, `Checking`)
+- **Decimal precision** standardized on financial columns (`amount_usd`, `loan_amount`, `interest_rate`)
+- **NULL checks** performed across all tables — 16 branches found with no manager assigned
+- **Foreign key relationships** verified via `information_schema`
+ 
+---
+ 
+##  Phase 2: Exploratory Data Analysis (EDA)
+ 
+### 👥 Customers
+- **Total customers:** 50,000
+- **Data range:** January 2019 – December 2025
+- **Best month for new signups:** November 2025 (657 new customers)
+- **Worst month:** February 2019 (492 new customers)
+- **Average:** ~595 new customers/month
+ 
+**Credit Score Distribution:**
+ 
+| Category | Score Range | Count |
+|---|---|---|
+| Very Poor | < 600 | 27,388 |
+| Poor | 600–649 | 4,502 |
+| Fair | 650–699 | 4,524 |
+| Good | 700–749 | 4,547 |
+| Excellent | ≥ 750 | 9,039 |
+ 
+>  Over 54% of customers fall in the "Very Poor" credit score category.
+ 
+---
+ 
+### Accounts
+- **Max balance:** $199,994.58
+- **Min balance:** $13.20
+- **Average balance:** ~$100,181
+ 
+**Account type distribution is nearly equal:**
+- Checking: 25,090
+- Savings: 24,962
+- Business: 24,948
+ 
+---
+ 
+###  Branches
+- **Total branches:** 500
+- **16 branches** have no manager assigned
+- **All branches are in the USA**
+- A few cities (e.g., Amandaville, West Kevin, South Brian) have multiple branches
+ 
+---
+ 
+###  Cards
+- **Debit cards:** 50,281
+- **Credit cards:** 49,719
+- **Customers holding both card types:** 18,485
+ 
+---
+ 
+### 🏪 Merchants
+- **Top merchant by transaction volume:** Lopez PLC (253 transactions)
+- **Top merchant by transaction value:** Lopez PLC
+- **City with most merchants:** North Robert (8 merchants)
+ 
+> Lopez PLC leads in both transaction count and total value, indicating strong customer engagement.
+ 
+---
+ 
+###  Loans
+- **Total loans:** 30,000
+- **Min loan amount:** $1,010.16
+- **Max loan amount:** $299,975.47
+- **Average loan amount:** $150,089.01
+ 
+**Loan size distribution:**
+ 
+| Category | Count |
+|---|---|
+| Small (< $100K) | 9,970 |
+| Medium ($100K–$250K) | 15,083 |
+| Large (> $250K) | 4,947 |
+ 
+**Interest rate distribution:**
+ 
+| Category | Rate Range | Count |
+|---|---|---|
+| Low | < 5% | 6,834 |
+| Medium | 5%–10% | 11,606 |
+| High | > 10% | 11,560 |
+ 
+> 📊 No significant correlation found between loan size and interest rate — average rates are nearly identical (~8.5%) across all loan sizes.
+ 
+**Multiple loans:**
+- 6,038 customers hold more than 1 loan
+- 4 customers hold 6 loans each
+ 
+**Seasonal trend:** Loan issuance peaks in January and mid-year months; dips in February and late summer.
+ 
+---
+ 
+###  Transactions
+- **Min transaction:** $1.02
+- **Max transaction:** $9,999.98
+- **Average transaction:** ~$5,000.82
+ 
+**Transaction size distribution:**
+ 
+| Category | Count | % |
+|---|---|---|
+| Low (< $3,000) | 299,907 | 29.99% |
+| Medium ($3,000–$7,000) | 399,782 | 39.98% |
+| High (> $7,000) | 300,311 | 30.03% |
+ 
+---
+ 
+##  Phase 3: Risk Analysis
+ 
+### High-Risk Customer Identification
+Customers with **credit score < 600** AND **total loan exposure > $300,000** were flagged as high-risk:
+ 
+- **Total high-risk customers:** ~1,935
+- **Risk percentage:** **3.87%** of total customer base
+ 
+> These customers represent significant financial risk and should be closely monitored by the bank for potential defaults.
+ 
+---
+ 
+##  Tools & Technologies
+ 
+- **Database:** MySQL
+- **IDE:** MySQL Workbench
+- **Concepts used:** DDL, DML, JOINs, CTEs, Window Functions, Subqueries, Temporary Tables, CASE statements, Aggregate Functions
+ 
+---
+ 
+##  Key Business Insights
+ 
+1. **Credit risk is concentrated** — over half of customers have very poor credit scores
+2. **Lending is stable** — loan issuance fluctuates very little year-over-year (~4,200–4,400/year)
+3. **Lopez PLC dominates** merchant activity in both volume and value
+4. **18,485 customers** hold both credit and debit cards — a strong cross-product adoption rate
+5. **Port David city** generates the highest total loan amounts ($5,389,351.88)
+6. **16 branches** are operating without a manager — an operational gap to address
+ 
+
+
