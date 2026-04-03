@@ -110,8 +110,7 @@ Dataset: Global Superstore (51,225 transactions, 2011-2014)
 ### Project 3
 # Bank Database 
 A comprehensive SQL-based data analysis project on a simulated banking database containing **50,000+ customers**, **1,000,000 transactions**, **30,000 loans**, and more. This project covers data cleaning, schema validation, exploratory data analysis (EDA), and business intelligence insights using MySQL.
- 
----
+
  
 ##  Database Schema
  
@@ -138,11 +137,11 @@ Before analysis, the dataset was cleaned and constraints were applied:
 - **NULL checks** performed across all tables — 16 branches found with no manager assigned
 - **Foreign key relationships** verified via `information_schema`
  
----
+
  
 ##  Phase 2: Exploratory Data Analysis (EDA)
  
-### 👥 Customers
+###  Customers
 - **Total customers:** 50,000
 - **Data range:** January 2019 – December 2025
 - **Best month for new signups:** November 2025 (657 new customers)
@@ -158,10 +157,9 @@ Before analysis, the dataset was cleaned and constraints were applied:
 | Fair | 650–699 | 4,524 |
 | Good | 700–749 | 4,547 |
 | Excellent | ≥ 750 | 9,039 |
+   Over 54% of customers fall in the "Very Poor" credit score category.
  
->  Over 54% of customers fall in the "Very Poor" credit score category.
- 
----
+
  
 ### Accounts
 - **Max balance:** $199,994.58
@@ -173,7 +171,7 @@ Before analysis, the dataset was cleaned and constraints were applied:
 - Savings: 24,962
 - Business: 24,948
  
----
+
  
 ###  Branches
 - **Total branches:** 500
@@ -181,23 +179,22 @@ Before analysis, the dataset was cleaned and constraints were applied:
 - **All branches are in the USA**
 - A few cities (e.g., Amandaville, West Kevin, South Brian) have multiple branches
  
----
+
  
 ###  Cards
 - **Debit cards:** 50,281
 - **Credit cards:** 49,719
 - **Customers holding both card types:** 18,485
  
----
- 
-### 🏪 Merchants
+
+###  Merchants
 - **Top merchant by transaction volume:** Lopez PLC (253 transactions)
 - **Top merchant by transaction value:** Lopez PLC
 - **City with most merchants:** North Robert (8 merchants)
  
-> Lopez PLC leads in both transaction count and total value, indicating strong customer engagement.
+ Lopez PLC leads in both transaction count and total value, indicating strong customer engagement.
  
----
+
  
 ###  Loans
 - **Total loans:** 30,000
@@ -221,7 +218,7 @@ Before analysis, the dataset was cleaned and constraints were applied:
 | Medium | 5%–10% | 11,606 |
 | High | > 10% | 11,560 |
  
-> 📊 No significant correlation found between loan size and interest rate — average rates are nearly identical (~8.5%) across all loan sizes.
+ No significant correlation found between loan size and interest rate — average rates are nearly identical (~8.5%) across all loan sizes.
  
 **Multiple loans:**
 - 6,038 customers hold more than 1 loan
@@ -254,7 +251,7 @@ Customers with **credit score < 600** AND **total loan exposure > $300,000** wer
 - **Total high-risk customers:** ~1,935
 - **Risk percentage:** **3.87%** of total customer base
  
-> These customers represent significant financial risk and should be closely monitored by the bank for potential defaults.
+ These customers represent significant financial risk and should be closely monitored by the bank for potential defaults.
  
 ---
  
