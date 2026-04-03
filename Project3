@@ -1,0 +1,715 @@
+
+use bank;
+select count(*) from loans;
+select count(*) from accounts;
+select count(*) from branches;
+select count(*) from cards;
+select count(*) from merchants;
+select count(*) from transactions; 
+select count(*) from customers;
+
+select * from loans limit 10;
+desc loans;
+desc accounts;
+desc branches;
+desc cards;
+desc merchants;
+desc customers;
+desc transactions;
+
+alter table customers
+modify column first_name varchar(255) not null;
+alter table customers
+modify column last_name varchar(255) not null;
+alter table customers
+modify column email varchar(255) not null;
+alter table customers
+modify column city varchar(255) not null;
+alter table customers
+modify column created_at datetime not null;
+
+alter table transactions 
+modify column amount_usd decimal(12,2) not null;
+
+alter table transactions 
+modify column transaction_date datetime not null;
+
+alter table merchants
+modify column merchant_name varchar(255) not null;
+
+alter table merchants
+modify column city varchar(100) not null;
+
+select card_type from cards
+group by card_type
+having card_type  not in  ('credit', 'debit'); 
+
+alter table cards
+modify column card_type enum('credit', 'debit') not null;
+
+alter table cards
+modify column expiration_date date not null;
+
+alter table branches 
+modify column branch_name varchar(100) not null;
+
+alter table branches 
+modify column city varchar(50) not null;
+
+alter table branches 
+modify column country varchar(50) not null;
+
+
+
+select * from branches where manager_name is null;
+
+select account_type from accounts
+group by account_type;
+
+alter table accounts
+modify column account_type enum('Savings', 'Business', 'Checking') not null;
+
+alter table accounts
+modify column open_date date not null;
+
+alter table loans
+modify column loan_amount decimal(12,2) not null;
+
+alter table loans
+modify column interest_rate decimal(5,2) not null;
+
+alter table loans
+modify column start_date date not null;
+
+
+select table_name, column_name , referenced_table_name, 
+referenced_column_name
+from information_schema.key_column_usage
+where table_schema= 'bank'
+and
+referenced_table_name is not null;
+
+-- joining customer and accounts
+select c.customer_id,
+c.first_name,
+c.last_name,
+a.account_id,
+a.account_type,
+a.balance_usd
+from customers as c
+join accounts  a on c.customer_id=a.customer_id ;
+
+-- joining accounts and cards
+select a.account_id,
+a.account_type,
+a.balance_usd,
+c.card_id,
+c.card_type,
+c.expiration_date
+from accounts as a
+join  cards as c on a.account_id=c.account_id;
+
+-- joining customers and loans
+select c.customer_id,
+c.first_name,
+c.last_name,
+l.loan_id,
+l.loan_amount,
+l.interest_rate,
+l.start_date
+from customers as c
+join loans as l
+on c.customer_id=l.customer_id;
+
+-- joining accounts and transactions
+select 
+a.account_id,
+a.customer_id,
+a.account_type,
+a.balance_usd,
+t.transaction_id,
+t.merchant_id,
+t.amount_usd,
+t.transaction_date
+from accounts as a
+join transactions as t 
+on a.account_id=t.account_id;
+
+-- joining merchants and transactions
+select m.merchant_id,
+m.merchant_name,
+m.city,
+t.transaction_id,
+t.amount_usd,
+t.transaction_date
+from merchants as m
+join transactions as t
+on m.merchant_id= t.merchant_id;
+
+desc customers;
+select credit_score from customers where credit_score is null;
+-- noone has null credit score
+
+desc accounts;
+select customer_id from accounts where customer_id  is null;
+select balance_usd from accounts where balance_usd is null;
+-- thes no data thats null as customer is foreign key and balance_usd is also not null i.e every customer account has balance in it
+
+desc branches;
+select count(*) from branches where manager_name is null;
+
+select count(*) from branches;
+-- out of 500 branches 16 branches do not have manager
+
+
+desc cards;
+select * from cards where account_id is null;
+
+desc loans;
+select * from loans where customer_id is null;
+
+desc merchants;
+desc transactions;
+select * from transactions where account_id is null;
+select * from transactions where merchant_id is null;
+
+
+-- understanding the ranges
+-- customers
+desc customers;
+select 
+min(credit_score),
+max(credit_score),
+round(avg(credit_score),2),
+
+min(created_at) as first_customer_joined,
+max(created_at) as latest_customer_joined,
+datediff(max(created_at), min(created_at)) as days_of_data
+from customers;
+
+
+-- as data is cleaned
+
+
+
+
+-- exploratory data analysis of customers
+-- how many customer do we have total?
+select count(*) from customers;
+-- we have total 50000
+desc customers;
+-- which cities are customers from
+select count(distinct city) as city from customers;
+
+-- customer growth over time when were most customers created
+-- when were most customers created each month no of customer count
+-- customer growth over time is sum of all month customer
+
+
+select 
+monthh,
+new_customer,
+sum(new_customer) over(order by monthh) as total_customers,
+max(new_customer) over() as max_new_customer,
+min(new_customer) over() as min_new_customer,
+round(avg(new_customer) over(),0) as avg_new_customer ,
+case 
+	when new_customer=max(new_customer) over() then ' bestmonth' 
+    when new_customer=min(new_customer) over() then 'worstmonth' 
+    else null
+    end as label
+from(
+select date_format(created_at,'%y-%m') as monthh,
+count( *) as new_customer
+from customers
+group by date_format(created_at,'%y-%m')
+) as monthly_counts;
+
+-- from data year 2019-01 to 2025-12 customers created thrie account
+-- best month customers were increased: 2025-11 with 657 new customers
+-- worst month customers were less enrolled: 2019-02 with 492 customers
+-- average :595 customers per month
+
+ -- overall credit score stats
+ select 
+ min(credit_score),
+ max(credit_score),
+ round(avg(credit_score),2)
+ from customers;
+ -- customers with minimum credit score is 300
+ -- customers with maximum credit score is 850
+ -- customers with average credit sacore is 574.49
+ 
+
+-- count customers in each credit score group
+select 
+case
+	when credit_score  between 0 and 599 then 'Very Poor credit score'
+    when credit_score between 600 and 649 then 'Poor credit score'
+    when credit_score between 650 and 699 then 'Fair credit score '
+    when credit_score between 700 and 749 then 'Good credit score '
+    when credit_score >=750 then'Excellent credit score '
+    end as label,
+    count(*) as total_customer
+from customers
+group by label;
+-- 9039 cuctomers has excellent credit score
+-- 27388 customers has very poor credit score
+-- 4547 customers has good credit score
+-- 4502 customers has poor credit score
+-- 4524 customers has fair credit score
+-- here very large number of cuatomers has very poor credit score
+
+
+select city,
+count(* ) as total_ver_poor_customer
+from customers
+ where credit_score<600
+ group by city 
+ order by total_ver_poor_customer desc;
+ -- east michael has 32 customers who have less credit score
+ 
+ 
+ -- -- exploratory data analysis of acounts
+ desc accounts;
+select max(balance_usd),
+min(balance_usd),
+avg(balance_usd)
+from accounts;
+-- max balance customer has in the bank is 199994.58 
+-- min balance customer has in bank is 13.20
+-- balance average customers has is 100181
+
+select min(open_date) as first_cus_account,
+max(open_date) as latest_cus_account,
+datediff(max(open_date), min(open_date) ) as no_of_days
+from accounts;
+-- first customer was joined at 2019-01-01 
+-- latest customer was joined at 2025-12-31 
+-- number of days the data is stored is 2556
+
+-- which account type is mostly used
+select account_type, count(*) as total
+from accounts
+group by account_type
+order by total  desc;
+-- checking account type is the highest i.e 25090 customers has account_type checking
+-- then second highest is savings with 24962
+-- then lastly business i.e 24948
+
+
+desc branches;
+select * from branches;
+select count(*) from branches
+where manager_name is null;
+-- 16 branches has no manager
+
+select city,count(*) as total from branches
+group by city
+order by total desc;
+-- Most cities have a single branch, while a few cities such as Amandaville, West Kevin, and South Brian have multiple branches. This suggests slightly higher banking demand or population concentration in those areas.
+ 
+select country, count(*) as total_branches
+from branches
+group by country
+order by total_branches desc;
+-- all the branches are from usa
+
+
+desc cards;
+select card_type ,count(*) as total
+from cards
+group by card_type
+order by total desc;
+-- most customers has debit card i. e 50281 customers has debit card
+-- 49719 customers has credit card
+select count(*) as total_cus_with_both_cards from(
+select a.customer_id
+from accounts a
+join cards c on a.account_id = c.account_id
+where c.card_type in ('credit','debit')
+group by a.customer_id
+having count(distinct c.card_type) = 2) as t;
+-- 18485 customers has both credit and debit cards
+
+
+desc merchants;
+select * from merchants limit 5;
+
+select city, count(*) as total_merchants
+ from  merchants
+ group by city
+ order by total_merchants desc;
+-- the city with most merchants is 'North Robert'(8 merchants)
+-- 'New Michael', 'Port Michael', and 'Sarahmouth' (6 merchants each).
+-- Most other cities have between 1 to 5 merchants.
+
+
+desc loans;
+select loan_amount from loans;
+ -- how many loans are in the dataset?
+ select count(*) from loans;
+ -- there are 30000 loans in the dataset
+ 
+ -- whats the average,minimum, and maximum loan amount?
+ select 
+ min(loan_amount) as min_loan_amount,
+ max(loan_amount) as max_loan_amount,
+ avg(loan_amount) as avg_loan_amount
+ from loans;
+-- result
+-- minimum loan amount is 1010.16
+-- maximum loan amount is 299975.47
+-- average loan amount is 150089.01
+
+-- how is loan amount distributed?
+select  cases , count(*)from(
+select loan_amount,
+case
+	when loan_amount<100000 then 'small loan'
+    when loan_amount  between 100000 and 250000 then 'medium loan'
+    when loan_amount >250000 then 'Large Loan'
+    end as cases
+from loans ) as t
+group by cases;
+-- result
+-- 9970 customers has small loans
+-- 15083 customers has medium loans
+-- 4947 customers has large loans
+desc loans;
+-- whats the min, max, avg intrest rate?
+select 
+min(interest_rate),
+max(interest_rate),
+avg(interest_rate)
+from loans;
+-- result
+-- minimum interest is 2.00 for a loan
+-- maximum interest is 15.00 for a loan
+-- average interest is 8.50 for a loan
+
+
+-- how many loans fall into low,medium,high interest rate brackets
+select  labels, count(*) as total from(
+select interest_rate,
+case
+	when interest_rate <5 then 'low interest rate'
+    when interest_rate between 5 and 10 then 'medium interest rate'
+    when interest_rate>10 then 'High interest rate'
+    end as labels
+    from loans) as t
+    
+group  by labels
+order by total desc;
+-- result
+-- 11606 customers who have taken loan has medium interest rate
+-- 11560 customers who have taken loan has high interest rate
+-- 6834 customers who have taken loan has low interest rate
+
+-- is there correlaton between loan amount and interest rate?
+select 
+   case
+	when loan_amount<100000 then 'small loan'
+    when loan_amount  between 100000 and 250000 then 'medium loan'
+    when loan_amount >250000 then 'Large Loan'
+    end as cases,
+    round(avg(interest_rate) ,2)as avg_interest
+    from loans
+group by cases;
+-- result
+-- small loan has avg interest 8.54
+-- medium loan has avg interest of 8.48
+-- large loan has avg interest of 8.53 
+-- after categorizing loan amounts into small, medium, and large groups
+-- i observed that the avg interest rates are nearly identical across all categories
+-- indicationg no significant correlation between loan and interest rate.
+
+
+desc loans;
+-- which customer has multiple loans
+with multi_loans as( 
+select 
+c.customer_id,  count(*) as total_loan
+from customers as c
+join loans as l 
+	on l.customer_id=c.customer_id 
+group by c.customer_id
+having total_loan>1
+order by total_loan desc)
+
+select count(*) as total_customer_multiple_loans
+from multi_loans;
+-- result
+-- 6038 customers has more than 1 loans
+
+select total_loan, count(*) as no_cus_mul_loans from(
+select 
+c.customer_id,  count(*) as total_loan
+from customers as c
+join loans as l 
+	on l.customer_id=c.customer_id 
+    group by c.customer_id) as t 
+group by total_loan
+having total_loan>1
+order by total_loan desc;
+-- reult
+-- 4 customers has 6 loans
+-- 14 customers has 5 loans
+-- 150 customers has 4 loans
+-- 1018 customers has 3 loans
+-- 4852 customers has 2 loans
+
+
+
+
+
+create temporary table multi_loans as 
+select c.customer_id,
+count(*) as total_loan
+from customers as c
+join loans as l
+on l.customer_id=c.customer_id
+group by c.customer_id
+having count(*)>2;
+
+
+select * from multi_loans 
+order by total_loan desc;
+
+
+-- how many loans are linked to mull customer id
+select * from loans as l 
+left join customers as c 
+on c.customer_id=l.customer_id
+where c.customer_id is null;
+-- result
+-- none loans are linked to null customer id
+
+-- how many loans started in each year or month
+desc loans;
+with monthh as(
+select
+date_format(start_date , '%y-%m') as month,
+count(*) as total_loan_started,
+row_number() over(order by date_format(start_date , '%y-%m') ) as rn
+from loans
+group by date_format(start_date,'%y-%m')
+order by month asc),
+
+yearr as(
+select 
+date_format(start_date, '%y') as year,
+count(*) as total_loan_start_year,
+row_number() over(order by date_format(start_date, '%y')) as rn
+from loans
+group by date_format(start_date, '%y') 
+order by year asc )
+
+select 
+m.month,
+m.total_loan_started,
+y.year,
+y.total_loan_start_year
+from monthh m
+left join yearr y
+on m.rn=y.rn;
+-- result
+-- in year 2019 4393 loan started
+-- in year 2020 4207 loan started
+-- in year 2021 4297 loan started
+-- in year 2022 4307 loan started
+-- in year 2023 4211 loan started
+-- in year 2024 4266 loan started
+-- in year 2025 4319 loan started
+-- the number of loans issued each year remains relatively stable, fluctuating slightly between 4200 and
+-- 4400, indicating lending activity over time
+
+
+-- are there seasonal trends in loan issuance?
+select 
+month(start_date) as month,
+count(*) as total_loans
+from loans
+group by month
+order by total_loans desc;
+-- result
+-- highest month is january 
+-- also july , march and may is also high
+-- lowest month is february
+-- september and august
+
+-- loan issuance shows a moderate seasonal trend, with higher activity 
+-- observes in january and mid- year months ahile lower occurs in february and late 
+-- summer months
+
+-- whats the average loan amount per customer?
+desc loans;
+select 
+customer_id,
+avg(loan_amount) as avgrage
+from(
+select 
+	c.customer_id,
+    l.loan_amount
+    from loans as l
+    join customers as c on c.customer_id=l.customer_id
+    ) as t
+    group by c.customer_id;
+    
+    
+    
+-- Which customers have the highest total loans?
+
+select
+customer_id,
+   first_name,
+    max(loan_amount) AS highest_loan
+from (
+select
+c.customer_id,
+c.first_name,
+l.loan_amount
+from customers as c 
+join  loans as l 
+on l.customer_id=c.customer_id
+
+ )as t 
+ group by customer_id
+ order by  highest_loan desc ;
+-- john has highest loan of 299975.47
+
+desc customers;
+desc loans;
+
+-- Which city  gives highest total loan amounts?
+
+select c.city,
+sum(loan_amount) as total
+from loans as l
+join customers  as c
+on c.customer_id=l.customer_id
+group by c.city
+order by total desc;
+-- result
+-- port david city gives the highest total loan amonut 
+-- (i.e5389351.88)
+
+desc transactions;
+desc accounts;
+
+
+-- which accounts have the highest transaction  amounts
+desc accounts;
+select c.first_name,
+a.account_id,
+amt
+from customers as c
+join(
+select a.account_id, sum(t.amount_usd) as amt, a.customer_id
+from accounts as a
+join transactions as t
+on a.account_id= t.account_id
+group by a.account_id)  as a on c.customer_id=a.customer_id
+ order by amt desc;
+ 
+ -- result
+-- account of  timothy i.e ACC0JVOHHFT6GDD has highest transactions
+desc transactions;
+-- what is minimum, maximum, and average transaction amount
+select 
+min(amount_usd) as minimum_transaction_amount,
+max(amount_usd) as maximum_transaction_amount,
+avg(amount_usd) as avg_transaction_amount
+from transactions;
+-- result
+-- minimum transaction amount is 1.02
+-- maximum transacton amount is 9999.98
+-- avg transaction amount is 5000.82
+
+-- how are transaction amounts distributed?
+select 
+case 
+	when amount_usd <3000 then 'Low'
+    when amount_usd between 3000 and 7000 then 'medium'
+    else 'high'
+    end as transaction_label,
+    count(*) as total,
+    round(count(*)*100/(select count(*) from transactions),2)
+    from transactions
+    group by transaction_label;
+-- result 
+-- 300311 customers have made high transacions
+-- 399782 customers have made medium transactions
+-- 299907 customers have made low trasations
+-- many customers prefer to do medium transactions more i.e (39.98%)
+-- then high transactions i. e 30.03%
+-- and lastly low transactions i.e 29.99%
+
+-- which merchants receive the highest total transaction amounts
+
+
+select 
+m.merchant_id,
+m.merchant_name,
+sum(t.amount_usd) as total
+from transactions as t
+join merchants as m 
+on m.merchant_id=t.merchant_id
+group by m.merchant_id
+order by total desc
+limit 1;
+-- result
+-- Lopez PLC has received the highest total transaction amounts
+
+
+-- which merchants have the most number of transactions
+desc merchants;
+desc transactions;
+select 
+t.merchant_id,
+m.merchant_name,
+count(t.transaction_id) as total
+from transactions as t
+join merchants as m
+ on m.merchant_id= t.merchant_id
+ group by t.merchant_id
+ order by total desc
+ limit 5;
+-- result
+-- merchant Lopez PLC has the most number of transactions i. e. 253
+-- Merchant Lopez PLC stands out as both the top in transaction
+-- count and total transaction value. this indicates that Lopez PLC is highly
+-- favored by customers, receiving frequent transactions that are also high
+-- value, highlighting strong customer engagement and revenue contribution
+
+
+-- find customers who are most likely to default or cause 
+-- problems for the bank
+-- here low credit score and high loan amounts defines high risks
+
+create temporary table high_risk_customers as 
+select c.customer_id,
+c.first_name,
+c.last_name,
+c.credit_score,
+sum(l.loan_amount) as total_loan_amount
+from customers as c
+join loans as l
+on c.customer_id=l.customer_id
+group by  c.customer_id,c.first_name,c.last_name,c.credit_score
+having credit_score<600 and total_loan_amount>300000 
+order by total_loan_amount desc;
+select count(*)as total from high_risk_customers;
+select round(count(*)*100/(select count(*) from customers),2) as risk_percentage from high_risk_customers;
+-- 3.87% customers are high most likely to default or cause 
+-- problems for the bank they have low credit scores(<600) and
+-- high loan exposure(>300k). This represents significant financial risk 
+-- and should be closely monitored by the bank.
+
+
+
+
+
+  
+
+
